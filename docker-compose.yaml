@@ -1,0 +1,19 @@
+﻿version: '3.8'
+
+services:
+  coolformapi:
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    ports:
+      - '6969:8080'
+    volumes:
+      - ./.aws:/root/.aws:ro
+    environment:
+      - ASPNETCORE_HTTP_PORTS=8080
+    networks:
+      - api-network
+
+networks:
+  api-network:
+    driver: bridge
