@@ -19,6 +19,7 @@ public class QuestionController:ControllerBase
     
     [HttpGet]
     [Authorize]
+    [Route("{formId}")]
     public async Task<IActionResult> GetQuestions(int formId)
     {
         var gg = await _questionService.getAllQuestions(formId);

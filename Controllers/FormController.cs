@@ -19,6 +19,7 @@ public class FormController: ControllerBase
     
     [HttpGet]
     [Authorize]
+    [Route ("{userId}")]
     public async Task<IActionResult> GetForm(int userId)
     {
         

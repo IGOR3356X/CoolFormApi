@@ -152,3 +152,4 @@ C:\Users\IgorPC\source\repos\CoolFormApi\bin\Debug\net8.0\AWSSDK.S3.dll
 C:\Users\IgorPC\source\repos\CoolFormApi\bin\Debug\net8.0\AWSSDK.Extensions.NETCore.Setup.dll
 C:\Users\IgorPC\source\repos\CoolFormApi\bin\Debug\net8.0\AWSSDK.SSO.dll
 C:\Users\IgorPC\source\repos\CoolFormApi\bin\Debug\net8.0\AWSSDK.SSOOIDC.dll
+C:\Users\IgorPC\source\repos\CoolFormApi\obj\Debug\net8.0\CoolFormApi.sourcelink.json

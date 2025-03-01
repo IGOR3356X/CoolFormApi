@@ -5,18 +5,27 @@ using CoolFormApi.Interfaces.IServices;
 public class S3Service : IS3Service
 {
     private readonly IAmazonS3 _s3Client;
-    private readonly string _bucketName;
+    private readonly string _bucketName = "coolformuserstorage";
     private readonly ILogger<S3Service> _logger;
 
     public S3Service(
-        IConfiguration config,
-        ILogger<S3Service> logger,
-        IAmazonS3 s3Client)
+        IConfiguration configuration,
+        ILogger<S3Service> logger)
     {
         _logger = logger;
-        _s3Client = s3Client;
-        _bucketName = config["YandexObjectStorage:BucketName"] 
-                      ?? throw new ArgumentException("Missing bucket name");
+    
+        var config = new AmazonS3Config
+        {
+            ServiceURL = "https://storage.yandexcloud.net",
+            ForcePathStyle = true,
+            RegionEndpoint = Amazon.RegionEndpoint.EUCentral1
+        };
+
+        _s3Client = new AmazonS3Client(
+            configuration["YandexObjectStorage:AccessKey"],
+            configuration["YandexObjectStorage:SecretKey"],
+            config
+        );
     }
 
     public async Task<string> UploadFileAsync(IFormFile file, string fileName)
