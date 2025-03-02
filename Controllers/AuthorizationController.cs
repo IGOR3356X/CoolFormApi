@@ -1,6 +1,7 @@
 ﻿using CoolFormApi.DTO.Auth;
 using CoolFormApi.Interfaces;
 using CoolFormApi.Interfaces.IServices;
+using CoolFormApi.Models;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CoolFormApi.Controllers;
@@ -23,7 +24,10 @@ public class AuthorizationController : ControllerBase
         try
         {
             var createdUser = await _userService.RegisterUser(authDto);
-
+            if (createdUser == null)
+            {
+                return BadRequest(new { message = "This username is already taken." });
+            }
             return Ok(
                 new ResponseAuthDTO()
                 {
@@ -40,9 +44,9 @@ public class AuthorizationController : ControllerBase
     [HttpPost("api/login")]
     public async Task<IActionResult> Login(AuthDTO authDto)
     {
-        var user = await _userService.LoginUser(authDto.Login.ToLower());
+        var user = await _userService.LoginUser(authDto);
 
-        if (user == null || user.Password != authDto.Password || user.Login != authDto.Login)
+        if (user == null)
         {
             return Unauthorized("Username not found and/or password");
         }

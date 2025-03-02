@@ -6,9 +6,9 @@ namespace CoolFormApi.Interfaces;
 
 public interface IUserService
 {
-    public Task<User> RegisterUser(AuthDTO authDTO);
+    public Task<User?> RegisterUser(AuthDTO authDTO);
     
-    public Task<User> LoginUser(string login);
+    public Task<User?> LoginUser(AuthDTO authDTO);
     
     public Task<bool> UpdateUser(UpdateUserDTO updateUserDTO,int userId);
 }

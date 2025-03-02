@@ -5,9 +5,9 @@ namespace CoolFormApi.Interfaces.IServices;
 
 public interface IQuestionService
 {
-    public Task<List<GetAllQuestionsFromForm>> getAllQuestions(int formId);
+    public Task<List<GetFormDescription>> getAllQuestions(int formId);
 
-    public Task AddQuestion(CreateNewQuestionDTO newQuestion);
+    public Task<CreatedQuestion> AddQuestion(CreateNewQuestionDTO newQuestion);
 
     public Task UpdateQuestion(UpdateQuestionDTO updatedQuestion, int questionId);
     public Task DeleteQuestion(int questionId);

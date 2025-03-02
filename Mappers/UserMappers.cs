@@ -6,7 +6,7 @@ namespace CoolFormApi.Mappers.MapForms;
 
 public static class UserMappers
 {
-    public static User fromAuthDtoToUser(this AuthDTO authDto)
+    public static User? fromAuthDtoToUser(this AuthDTO authDto)
     {
         return new User()
         {

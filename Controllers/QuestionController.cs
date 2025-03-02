@@ -1,4 +1,5 @@
-﻿using CoolFormApi.DTO.Questions;
+﻿using System.ComponentModel.DataAnnotations;
+using CoolFormApi.DTO.Questions;
 using CoolFormApi.Interfaces.IServices;
 using CoolFormApi.Models;
 using Microsoft.AspNetCore.Authorization;
@@ -30,9 +31,9 @@ public class QuestionController:ControllerBase
     [Authorize]
     public async Task<IActionResult> AddQuestion([FromBody] CreateNewQuestionDTO newQuestion)
     {
-         await _questionService.AddQuestion(newQuestion);
+         var gg = await _questionService.AddQuestion(newQuestion);
          await _questionService.UpdateFormMaxScore(newQuestion.FormId);
-         return Ok();
+         return Ok(gg);
     }
 
     [HttpPut]
@@ -48,10 +49,18 @@ public class QuestionController:ControllerBase
     [HttpDelete]
     [Authorize]
     [Route("{questionId}")]
-    public async Task<IActionResult> DeleteQuestion(int formId ,int questionId)
+    public async Task<IActionResult> DeleteQuestion(int questionId,[Required]int formId)
     {
-        await _questionService.DeleteQuestion(questionId);
-        await _questionService.UpdateFormMaxScore(formId);
-        return Ok();
+        try
+        {
+            await _questionService.DeleteQuestion(questionId);
+            await _questionService.UpdateFormMaxScore(formId);
+            return NoContent();
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, ex);
+        }
+
     }
 }

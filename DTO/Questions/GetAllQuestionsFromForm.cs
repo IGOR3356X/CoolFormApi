@@ -2,6 +2,12 @@
 
 namespace CoolFormApi.DTO.Questions;
 
+public class GetFormDescription
+{
+    public string FormName { get; set; }
+    public string FormDescription { get; set; }
+    public List<GetAllQuestionsFromForm>? Questions { get; set; }
+}
 public class GetAllQuestionsFromForm
 {
     public int Id { get; set; }

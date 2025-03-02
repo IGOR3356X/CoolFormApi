@@ -28,7 +28,7 @@ public class S3Service : IS3Service
         );
     }
 
-    public async Task<string> UploadFileAsync(IFormFile file, string fileName)
+    public async Task<string> UploadFileAsync(IFormFile file, string fileName, int UserId)
     {
         try
         {
@@ -39,7 +39,7 @@ public class S3Service : IS3Service
             var request = new PutObjectRequest
             {
                 BucketName = _bucketName,
-                Key = $"photos/{fileName}",
+                Key = $"UserPhotos/{UserId}/{fileName}",
                 InputStream = memoryStream,
                 ContentType = file.ContentType,
                 AutoCloseStream = false,
@@ -48,7 +48,7 @@ public class S3Service : IS3Service
 
             var response = await _s3Client.PutObjectAsync(request);
             
-            return $"https://{_bucketName}.storage.yandexcloud.net/photos/{fileName}";
+            return $"https://{_bucketName}.storage.yandexcloud.net/UserPhotos/{UserId}/{fileName}";
         }
         catch (Exception ex)
         {

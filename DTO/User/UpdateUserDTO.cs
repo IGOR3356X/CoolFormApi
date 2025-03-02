@@ -6,7 +6,5 @@ public class UpdateUserDTO
 
     public string? Password { get; set; }
     
-    public string? Photo { get; set; }
-    
     public IFormFile? File { get; set; }
 }

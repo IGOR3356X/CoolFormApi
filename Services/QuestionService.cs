@@ -29,24 +29,11 @@ public class QuestionService: IQuestionService
         _repositoryForm = repositoryForm;
     }
     
-    public async Task<List<GetAllQuestionsFromForm>> getAllQuestions(int formId)
-    { 
-        // await _repository.GetQueryable()
-        //     .Include(x => x.Options)
-        //     .Where(x => x.FormId == formId)
-        //     .Select(x => new GetAllQuestionsFromForm
-        //     {
-        //         Id = x.Id,
-        //         QuestionText = x.QuestionText,
-        //         QuestionType = x.QuestionType,
-        //         questionOptions = new List<QuestionOptions>()
-        //         {
-        //             
-        //         }
-        //     })
-        //     .ToListAsync();
+    public async Task<List<GetFormDescription>> getAllQuestions(int formId)
+    {
         var surveyData = await _repositoryQestions.GetQueryable()
             .Include(x => x.Options)
+            .Include(x => x.Form)
             .Where(x => x.FormId == formId)
             .Select(q => new GetAllQuestionsFromForm
             {
@@ -61,7 +48,18 @@ public class QuestionService: IQuestionService
             })
             .ToListAsync();
 
-        return surveyData;
+        // Группируем вопросы по форме
+        var formDescription = await _repositoryForm.GetQueryable()
+            .Where(x => x.Id == formId)
+            .Select(f => new GetFormDescription
+            {
+                FormName = f.Name,
+                FormDescription = f.Description,
+                Questions = surveyData  // Используем ранее полученные вопросы
+            })
+            .FirstOrDefaultAsync();
+
+        return new List<GetFormDescription> { formDescription };
     }
 
     // public async Task AddQuestion(CreateNewQuestionDTO newQuestion)
@@ -82,7 +80,7 @@ public class QuestionService: IQuestionService
     //     }
     //       
     // }
-    public async Task AddQuestion(CreateNewQuestionDTO newQuestion)
+    public async Task<CreatedQuestion> AddQuestion(CreateNewQuestionDTO newQuestion)
     {
         var question = newQuestion.FromCreateNewQuestionDtoToQuestion();
         question.CorrectAnswer = newQuestion.QuestionType == "text" 
@@ -126,6 +124,10 @@ public class QuestionService: IQuestionService
                 }
             }
         }
+        return new CreatedQuestion()
+        {
+            Id = createdQuestion.Id
+        };
     }
     
     public async Task UpdateQuestion(UpdateQuestionDTO updatedQuestion, int questionId)

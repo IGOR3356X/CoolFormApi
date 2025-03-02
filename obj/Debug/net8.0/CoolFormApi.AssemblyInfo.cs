@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("CoolFormApi")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+b0d7af13d6094b4ffecd552a9415e12979b3011c")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+691e8ce5f8712b0aa333c270a6774f2e1c28b7ed")]
 [assembly: System.Reflection.AssemblyProductAttribute("CoolFormApi")]
 [assembly: System.Reflection.AssemblyTitleAttribute("CoolFormApi")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
