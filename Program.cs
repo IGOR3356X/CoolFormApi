@@ -19,8 +19,6 @@ builder.Services.AddDbContext<CoolFormsDbContext>(x =>
 
 builder.Services.AddHttpClient(); 
 
-builder.Services.AddDefaultAWSOptions(builder.Configuration.GetAWSOptions());
-builder.Services.AddAWSService<IAmazonS3>();
 builder.Services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
 builder.Services.AddScoped<IFormService, FormService>();
 builder.Services.AddScoped<IUserService, UserService>();

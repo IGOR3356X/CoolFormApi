@@ -7,8 +7,6 @@ services:
       dockerfile: Dockerfile
     ports:
       - '6969:8080'
-    volumes:
-      - ./.aws:/root/.aws:ro
     environment:
       - ASPNETCORE_HTTP_PORTS=8080
     networks:

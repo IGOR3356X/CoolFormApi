@@ -1,4 +1,5 @@
-﻿using Amazon.S3;
+﻿using Amazon;
+using Amazon.S3;
 using Amazon.S3.Model;
 using CoolFormApi.Interfaces.IServices;
 
@@ -8,24 +9,24 @@ public class S3Service : IS3Service
     private readonly string _bucketName = "coolformuserstorage";
     private readonly ILogger<S3Service> _logger;
 
-    public S3Service(
-        IConfiguration configuration,
-        ILogger<S3Service> logger)
+    public S3Service(IConfiguration configuration, ILogger<S3Service> logger)
     {
         _logger = logger;
+    
+        var accessKey = configuration["YandexObjectStorage:AccessKey"];
+        var secretKey = configuration["YandexObjectStorage:SecretKey"];
+    
+        _logger.LogInformation("Using AccessKey: {AccessKey}", accessKey?[..3] + "***"); // Частичный лог для безопасности
+        _logger.LogInformation("Using SecretKey: {SecretKey}", secretKey?[..3] + "***");
     
         var config = new AmazonS3Config
         {
             ServiceURL = "https://storage.yandexcloud.net",
-            ForcePathStyle = true,
-            RegionEndpoint = Amazon.RegionEndpoint.EUCentral1
+            AuthenticationRegion = "ru-central1",
+            ForcePathStyle = true
         };
-
-        _s3Client = new AmazonS3Client(
-            configuration["YandexObjectStorage:AccessKey"],
-            configuration["YandexObjectStorage:SecretKey"],
-            config
-        );
+    
+        _s3Client = new AmazonS3Client(accessKey, secretKey, config);
     }
 
     public async Task<string> UploadFileAsync(IFormFile file, string fileName, int UserId)
