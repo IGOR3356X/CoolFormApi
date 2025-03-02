@@ -14,4 +14,13 @@ public static class UserMappers
             Password = authDto.Password,
         };
     }
+
+    public static GetUserDTO FromUserToGetUser(this User user)
+    {
+        return new GetUserDTO()
+        {
+            Login = user.Login,
+            Photo = user.Photo
+        };
+    }
 }

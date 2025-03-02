@@ -34,4 +34,17 @@ public class UserController:ControllerBase
                 return BadRequest(new { message = "Something went wrong" });
         }
     }
+
+    [HttpGet("{userId}")]
+    [Authorize]
+    public async Task<IActionResult> GetUser(int userId)
+    {
+        var gg = await _userService.getUserById(userId);
+        if (gg  == null)
+        {
+            return NotFound(new { message = "User not found" });
+        }
+
+        return Ok(gg);
+    }
 }

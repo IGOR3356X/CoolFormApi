@@ -11,4 +11,6 @@ public interface IUserService
     public Task<User?> LoginUser(AuthDTO authDTO);
     
     public Task<UserSevicesErrors> UpdateUser(UpdateUserDTO updateUserDTO,int userId);
+
+    public Task<GetUserDTO> getUserById(int userId);
 }

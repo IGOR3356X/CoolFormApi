@@ -61,4 +61,10 @@ public class UserService: IUserService
         
         return UserSevicesErrors.Ok;
     }
+
+    public async Task<GetUserDTO> getUserById(int userId)
+    {
+        var gg =await _userRepository.GetByIdAsync(userId);
+        return gg.FromUserToGetUser();
+    }
 }
