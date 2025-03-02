@@ -43,7 +43,7 @@ public class QuestionController:ControllerBase
     {
         await _questionService.UpdateQuestion(updateQuestion, questionId);
         await _questionService.UpdateFormMaxScore(updateQuestion.FormId);
-        return Ok();
+        return Ok(new { message = "Question updated" });
     }
     
     [HttpDelete]

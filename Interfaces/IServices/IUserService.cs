@@ -10,5 +10,5 @@ public interface IUserService
     
     public Task<User?> LoginUser(AuthDTO authDTO);
     
-    public Task<bool> UpdateUser(UpdateUserDTO updateUserDTO,int userId);
+    public Task<UserSevicesErrors> UpdateUser(UpdateUserDTO updateUserDTO,int userId);
 }

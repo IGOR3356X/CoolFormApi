@@ -21,10 +21,17 @@ public class UserController:ControllerBase
     [Authorize]
     public async Task<IActionResult> UpdateUser (int userId, [FromForm] UpdateUserDTO updateUserDto)
     {
-        var isExist = await _userService.UpdateUser(updateUserDto, userId);
-        if (!isExist)
-            return BadRequest("User not found or Username already exist");
-
-        return Ok();
+        var response = await _userService.UpdateUser(updateUserDto, userId);
+        switch (response)
+        {
+            case UserSevicesErrors.NotFound:
+                return BadRequest(new { message = "User not found" });
+            case UserSevicesErrors.AlreadyExists:
+                return BadRequest(new { message = "Username already exist" });
+            case UserSevicesErrors.Ok:
+                return Ok(new { message = "User successfully updated" });
+            default:
+                return BadRequest(new { message = "Something went wrong" });
+        }
     }
 }

@@ -34,20 +34,20 @@ public class UserService: IUserService
         return await _userRepository.GetQueryable().FirstOrDefaultAsync(x => x.Login.Contains(authDTO.Login) && x.Password.Contains(authDTO.Password));
     }
 
-    public async Task<bool> UpdateUser(UpdateUserDTO updateUserDto,int userId)
+    public async Task<UserSevicesErrors> UpdateUser(UpdateUserDTO updateUserDto,int userId)
     {
         string? photo = null;
         
         var user = await _userRepository.GetByIdAsync(userId);
         if(user == null)
-            return false;
+            return UserSevicesErrors.NotFound;
         
         user.Login = updateUserDto.Login;
         user.Password = updateUserDto.Password;
         
-        if (await _userRepository.GetQueryable().Where(x => x.Login.Contains(user.Login)).FirstOrDefaultAsync() != null)
+        if (await _userRepository.GetQueryable().Where(x => x.Login.Contains(user.Login) && x.Id != userId).FirstOrDefaultAsync() != null)
         {
-            return false;
+            return UserSevicesErrors.AlreadyExists;
         }
         
         if (updateUserDto.File != null && updateUserDto.File.Length > 0)
@@ -59,6 +59,6 @@ public class UserService: IUserService
         
         await _userRepository.UpdateAsync(user);
         
-        return true;
+        return UserSevicesErrors.Ok;
     }
 }

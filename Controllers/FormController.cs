@@ -44,7 +44,7 @@ public class FormController: ControllerBase
         {
             return NotFound();
         }
-        return Ok();
+        return Ok(new { message = "Form updated" });
     }
 
     [HttpDelete]
