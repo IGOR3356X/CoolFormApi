@@ -29,7 +29,7 @@ public class QuestionService: IQuestionService
         _repositoryForm = repositoryForm;
     }
     
-    public async Task<List<GetFormDescription>> getAllQuestions(int formId)
+    public async Task<GetFormDescription> getAllQuestions(int formId)
     {
         var surveyData = await _repositoryQestions.GetQueryable()
             .Include(x => x.Options)
@@ -51,15 +51,11 @@ public class QuestionService: IQuestionService
         // Группируем вопросы по форме
         var formDescription = await _repositoryForm.GetQueryable()
             .Where(x => x.Id == formId)
-            .Select(f => new GetFormDescription
-            {
-                FormName = f.Name,
-                FormDescription = f.Description,
-                Questions = surveyData  // Используем ранее полученные вопросы
-            })
             .FirstOrDefaultAsync();
 
-        return new List<GetFormDescription> { formDescription };
+        return new GetFormDescription { FormName = formDescription.Name
+            , FormDescription = formDescription.Description, 
+            Questions = surveyData };
     }
 
     // public async Task AddQuestion(CreateNewQuestionDTO newQuestion)
