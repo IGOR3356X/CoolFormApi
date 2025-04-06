@@ -42,8 +42,8 @@ public class UserService: IUserService
         if(user == null)
             return UserSevicesErrors.NotFound;
         
-        user.Login = updateUserDto.Login;
-        user.Password = updateUserDto.Password;
+        user.Login = updateUserDto.Login ?? user.Login;
+        user.Password = updateUserDto.Password ?? user.Password;
         
         if (await _userRepository.GetQueryable().Where(x => x.Login.Contains(user.Login) && x.Id != userId).FirstOrDefaultAsync() != null)
         {
@@ -52,10 +52,10 @@ public class UserService: IUserService
         
         if (updateUserDto.File != null && updateUserDto.File.Length > 0)
         {
-            photo = await _s3Service.UploadFileAsync(updateUserDto.File, updateUserDto.Login.ToLower(),userId);
+            photo = await _s3Service.UploadFileAsync(updateUserDto.File, userId);
         }
         
-        user.Photo = photo;
+        user.Photo = photo ?? user.Photo;
         
         await _userRepository.UpdateAsync(user);
         

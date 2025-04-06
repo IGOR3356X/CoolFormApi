@@ -40,6 +40,7 @@ public class UserController:ControllerBase
     public async Task<IActionResult> GetUser(int userId)
     {
         var gg = await _userService.getUserById(userId);
+        
         if (gg  == null)
         {
             return NotFound(new { message = "User not found" });

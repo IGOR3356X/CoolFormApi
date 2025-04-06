@@ -40,6 +40,7 @@ public class QuestionService: IQuestionService
                 Id = q.Id,
                 QuestionText = q.QuestionText,
                 QuestionType = q.QuestionType,
+                Points = q.Points.Value,
                 QuestionOptions = q.Options.Select(o => new QuestionOptions
                 {
                     Id = o.Id,

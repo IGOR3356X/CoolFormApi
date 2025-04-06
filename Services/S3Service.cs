@@ -29,7 +29,7 @@ public class S3Service : IS3Service
         _s3Client = new AmazonS3Client(accessKey, secretKey, config);
     }
 
-    public async Task<string> UploadFileAsync(IFormFile file, string fileName, int UserId)
+    public async Task<string> UploadFileAsync(IFormFile file, int UserId)
     {
         try
         {
@@ -40,7 +40,7 @@ public class S3Service : IS3Service
             var request = new PutObjectRequest
             {
                 BucketName = _bucketName,
-                Key = $"UserPhotos/{UserId}/{fileName}",
+                Key = $"UserPhotos/{UserId}/{file.FileName}",
                 InputStream = memoryStream,
                 ContentType = file.ContentType,
                 AutoCloseStream = false,
@@ -49,11 +49,11 @@ public class S3Service : IS3Service
 
             var response = await _s3Client.PutObjectAsync(request);
             
-            return $"https://{_bucketName}.storage.yandexcloud.net/UserPhotos/{UserId}/{fileName}";
+            return $"https://{_bucketName}.storage.yandexcloud.net/UserPhotos/{UserId}/{file.FileName}";
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "S3 upload failed for {FileName}", fileName);
+            _logger.LogError(ex, "S3 upload failed for {FileName}", file.Name);
             throw;
         }
     }
