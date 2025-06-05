@@ -22,6 +22,7 @@ public class TokenService:ITokenService
         {
             new Claim("Id", user.Id.ToString()),
             new Claim("Login", user.Login),
+            new Claim(ClaimTypes.Role, user.Role.Name)
         };
 
         var creds = new SigningCredentials(_key, SecurityAlgorithms.HmacSha512);

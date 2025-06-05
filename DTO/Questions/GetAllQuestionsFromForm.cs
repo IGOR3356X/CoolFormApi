@@ -15,8 +15,9 @@ public class GetAllQuestionsFromForm
     public string QuestionType { get; set; }
     public int Points { get; set; }
     public List<QuestionOptions> QuestionOptions { get; set; }
+    public string? CorrectTextAnswer { get; set; } // Для текстовых вопросов
+    public List<QuestionOptions>? CorrectOptions { get; set; } // Для radio/checkbox
 }
-
 public class QuestionOptions
 {
     public int Id { get; set; }

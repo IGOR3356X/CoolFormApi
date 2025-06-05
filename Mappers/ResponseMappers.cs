@@ -9,6 +9,7 @@ public static class ResponseMappers
     {
         return new MyAnswersDto()
         {
+            Id = score.Id,
             Form = score.Form.Name,
             CreatedAt = score.CreatedAt,
             Score = score.Score1,
@@ -20,7 +21,10 @@ public static class ResponseMappers
     {
         return new FormAnswersDTO()
         {
+            Id = score.Id,
+            UserId = score.UserId,
             User = score.User.Login ?? "Ноу нейм",
+            Photo = score.User.Photo,
             CreatedAt = score.CreatedAt,
             Score = score.Score1,
             FormScore = score.Form.MaxScore

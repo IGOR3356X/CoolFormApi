@@ -11,7 +11,7 @@ public partial class Option
 
     public string OptionText { get; set; } = null!;
 
-    public virtual ICollection<CorrectAnswer> Correctanswers { get; set; } = new List<CorrectAnswer>();
+    public virtual ICollection<Correctanswer> Correctanswers { get; set; } = new List<Correctanswer>();
 
     public virtual Question Question { get; set; } = null!;
 

@@ -12,7 +12,7 @@ public class ResponseService : IResponseService
     private readonly IGenericRepository<Response> _responseRepository;
     private readonly IGenericRepository<Question> _questionRepository;
     private readonly IGenericRepository<Option> _optionRepository;
-    private readonly IGenericRepository<CorrectAnswer> _correctAnswerRepository;
+    private readonly IGenericRepository<Correctanswer> _correctAnswerRepository;
     private readonly IGenericRepository<Score> _scoreRepository;
     private readonly IGenericRepository<ResponseOption> _responseOptionRepository;
     private readonly ILogger<ResponseService> _logger;
@@ -21,7 +21,7 @@ public class ResponseService : IResponseService
         IGenericRepository<Response> responseRepository,
         IGenericRepository<Question> questionRepository,
         IGenericRepository<Option> optionRepository,
-        IGenericRepository<CorrectAnswer> correctAnswerRepository,
+        IGenericRepository<Correctanswer> correctAnswerRepository,
         IGenericRepository<Score> scoreRepository,
         IGenericRepository<ResponseOption> responseOptionRepository,
         ILogger<ResponseService> logger)
@@ -37,33 +37,41 @@ public class ResponseService : IResponseService
 
     public async Task<ScoreResultDto> SubmitAnswersAsync(SubmitAnswersDto submitDto)
     {
-        var scoreResult = new ScoreResultDto();
+        var scoreResult = new ScoreResultDto { QuestionResults = new List<QuestionResultDto>() };
         var responses = new List<Response>();
+        var responseOptions = new List<ResponseOption>(); // Для немедленного сохранения
 
+        // Создаем Score
+        var score = new Score
+        {
+            FormId = submitDto.FormId,
+            UserId = submitDto.UserId,
+            Score1 = 0,
+            CreatedAt = DateTime.Now
+        };
+        await _scoreRepository.CreateAsync(score);
+
+        // Обрабатываем каждый ответ
         foreach (var answer in submitDto.Answers)
         {
             var question = await _questionRepository.GetQueryable()
-                .Include(q => q.Options)
                 .Include(q => q.Correctanswers)
                 .FirstOrDefaultAsync(q => q.Id == answer.QuestionId);
 
-            if (question == null)
-            {
-                throw new KeyNotFoundException($"Question with ID {answer.QuestionId} not found");
-            }
+            if (question == null) continue;
 
             var response = new Response
             {
                 FormId = submitDto.FormId,
                 UserId = submitDto.UserId,
                 QuestionId = answer.QuestionId,
-                UserAnswer = answer.TextAnswer,
+                UserAnswer = answer.TextAnswer ?? string.Empty,
                 Points = 0,
-                IsCorrect = false
+                IsCorrect = false,
+                ScoreId = score.Id
             };
 
-            // Проверка правильности ответа
-            switch (question.QuestionType.ToLower())
+            switch (question.QuestionType.ToLowerInvariant())
             {
                 case "text":
                     ProcessTextAnswer(answer, question, response);
@@ -71,83 +79,41 @@ public class ResponseService : IResponseService
 
                 case "radio":
                 case "checkbox":
-                    await ProcessOptionsAnswer(answer, question, response);
+                    await ProcessOptionsAnswer(answer, question, response, responseOptions);
                     break;
             }
 
-            scoreResult.TotalScore += response.Points.Value;
+            responses.Add(response);
+            scoreResult.TotalScore += response.Points ?? 0;
             scoreResult.QuestionResults.Add(new QuestionResultDto
             {
                 QuestionId = answer.QuestionId,
                 PointsEarned = response.Points ?? 0,
                 IsCorrect = response.IsCorrect ?? false
             });
-
-            responses.Add(response);
         }
 
-        // Сохраняем все ответы
+        // Сохраняем ответы
         await _responseRepository.CreateRangeAsync(responses);
 
-        // Сохраняем связи с вариантами ответов
-        var responseOptions = new List<ResponseOption>();
-
-        foreach (var response in responses)
-        {
-            if (response.ResponseOptions != null)
-            {
-                foreach (var option in response.ResponseOptions)
-                {
-                    // Проверяем, не добавлен ли уже этот вариант ответа
-                    if (!responseOptions.Any(ro => ro.OptionId == option.OptionId && ro.ResponseId == response.Id))
-                    {
-                        responseOptions.Add(new ResponseOption
-                        {
-                            ResponseId = response.Id, // Убедитесь, что response.Id задан
-                            OptionId = option.OptionId // Указываем только OptionId
-                        });
-                    }
-                }
-            }
-        }
-
+        // Сохраняем выбранные варианты
         if (responseOptions.Any())
         {
             await _responseOptionRepository.CreateRangeAsync(responseOptions);
         }
 
-        // Сохраняем общий счёт
-        var score = new Score
-        {
-            FormId = submitDto.FormId,
-            UserId = submitDto.UserId,
-            Score1 = scoreResult.TotalScore,
-            CreatedAt = DateTime.Now
-        };
-
-        await _scoreRepository.CreateAsync(score);
+        // Обновляем общий счет
+        score.Score1 = scoreResult.TotalScore;
+        await _scoreRepository.UpdateAsync(score);
 
         return scoreResult;
     }
 
-    private void ProcessTextAnswer(UserAnswerDto answer, Question question, Response response)
-    {
-        if (string.IsNullOrWhiteSpace(answer.TextAnswer))
-        {
-            response.Points = 0;
-            response.IsCorrect = false;
-            return;
-        }
-
-        var isCorrect = answer.TextAnswer.Trim().Equals(
-            question.CorrectAnswer?.Trim(),
-            StringComparison.OrdinalIgnoreCase);
-
-        response.IsCorrect = isCorrect;
-        response.Points = isCorrect ? question.Points : 0;
-    }
-
-    private async Task ProcessOptionsAnswer(UserAnswerDto answer, Question question, Response response)
+    private async Task ProcessOptionsAnswer(
+        UserAnswerDto answer, 
+        Question question, 
+        Response response,
+        List<ResponseOption> responseOptions)
     {
         if (answer.SelectedOptionIds == null || !answer.SelectedOptionIds.Any())
         {
@@ -156,65 +122,63 @@ public class ResponseService : IResponseService
             return;
         }
 
+        // Проверка существования вариантов
+        var existingOptionIds = await _optionRepository.GetQueryable()
+            .Where(o => answer.SelectedOptionIds.Contains(o.Id))
+            .Select(o => o.Id)
+            .ToListAsync();
+
+        var invalidIds = answer.SelectedOptionIds.Except(existingOptionIds).ToList();
+        if (invalidIds.Any())
+        {
+            throw new ArgumentException($"Invalid Option IDs: {string.Join(", ", invalidIds)}");
+        }
+
         // Получаем правильные ответы
         var correctAnswers = await _correctAnswerRepository.GetQueryable()
             .Where(ca => ca.Questionid == question.Id)
             .Select(ca => ca.Optionid)
             .ToListAsync();
 
-        // Получаем выбранные ответы
-        var selectedOptions = await _optionRepository.GetQueryable()
-            .Where(o => answer.SelectedOptionIds.Contains(o.Id))
-            .ToListAsync();
+        // Проверяем правильность
+        bool isFullyCorrect = false;
+        var selectedIds = answer.SelectedOptionIds;
 
-        // Проверяем соответствие
-        var isFullyCorrect = false;
-        var isPartiallyCorrect = false;
-
-        switch (question.QuestionType.ToLower())
+        if (correctAnswers.Any())
         {
-            case "radio":
-                // Для radio вопросов полностью правильный ответ
-                isFullyCorrect = selectedOptions.Count == 1 && correctAnswers.Contains(selectedOptions[0].Id);
-                break;
-
-            case "checkbox":
-                // Для checkbox вопросов
-                var selectedOptionIds = selectedOptions.Select(o => o.Id).ToList();
-                var correctSelectedCount = selectedOptionIds.Count(id => correctAnswers.Contains(id));
-
-                // Полностью правильный ответ
-                isFullyCorrect = selectedOptionIds.Count == correctAnswers.Count &&
-                                 selectedOptionIds.All(id => correctAnswers.Contains(id));
-
-                // Частично правильный ответ (хотя бы один правильный)
-                isPartiallyCorrect = correctSelectedCount > 0;
-                break;
+            isFullyCorrect = question.QuestionType.ToLowerInvariant() switch
+            {
+                "radio" => selectedIds.Count == 1 && correctAnswers.Contains(selectedIds[0]),
+                "checkbox" => selectedIds.Count == correctAnswers.Count && 
+                              selectedIds.All(correctAnswers.Contains),
+                _ => false
+            };
         }
 
-        // Начисление баллов
-        if (isFullyCorrect)
-        {
-            response.Points = question.Points; // Полные баллы за полностью правильный ответ
-            response.IsCorrect = true;
-        }
-        else if (isPartiallyCorrect && question.QuestionType.ToLower() == "checkbox")
-        {
-            response.Points = question.Points / 2; // Половина баллов за частично правильный ответ
-            response.IsCorrect = false; // Ответ не считается полностью правильным
-        }
-        else
-        {
-            response.Points = 0; // Нет баллов за неправильный ответ
-            response.IsCorrect = false;
-        }
+        response.IsCorrect = isFullyCorrect;
+        response.Points = isFullyCorrect ? question.Points : 0;
 
-        // Сохраняем связи с вариантами ответов
-        response.ResponseOptions = selectedOptions.Select(o => new ResponseOption
+        // Создаем записи для ResponseOptions
+        foreach (var optionId in selectedIds)
         {
-            ResponseId = response.Id, // Убедитесь, что response.Id задан
-            OptionId = o.Id           // Указываем только OptionId
-        }).ToList();
+            responseOptions.Add(new ResponseOption
+            {
+                Response = response, // Связь через навигационное свойство
+                OptionId = optionId
+            });
+        }
+    }
+
+    private void ProcessTextAnswer(UserAnswerDto answer, Question question, Response response)
+    {
+        var isCorrect = string.Equals(
+            answer.TextAnswer?.Trim() ?? "",
+            question.CorrectAnswer?.Trim() ?? "",
+            StringComparison.OrdinalIgnoreCase
+        );
+
+        response.IsCorrect = isCorrect;
+        response.Points = isCorrect ? question.Points : 0;
     }
 
     public async Task<List<MyAnswersDto>> GetUserAnswers(int userId)
@@ -222,7 +186,7 @@ public class ResponseService : IResponseService
         return await _scoreRepository.GetQueryable()
             .Include(x => x.Form)
             .Include(x => x.User)
-            .Where(x=> x.UserId == userId)
+            .Where(x => x.UserId == userId)
             .Select(x => x.FromScoreToAnswer())
             .ToListAsync();
     }
@@ -232,8 +196,68 @@ public class ResponseService : IResponseService
         return await _scoreRepository.GetQueryable()
             .Include(x => x.Form)
             .Include(x => x.User)
-            .Where(x=> x.FormId == formId)
+            .Where(x => x.FormId == formId)
             .Select(x => x.FromScoreToFormAnswer())
             .ToListAsync();
+    }
+
+    public async Task<AttemptDetailsDto> GetAttemptDetailsAsync(int scoreId, int currentUserId)
+    {
+        var score = await _scoreRepository.GetQueryable()
+            .Include(s => s.User)
+            .FirstOrDefaultAsync(s => s.Id == scoreId);
+
+        var responses = await _responseRepository.GetQueryable()
+            .Include(r => r.Question)
+            .ThenInclude(q => q.Options) // Добавлено: загружаем ВСЕ варианты вопроса
+            .Include(r => r.Question)
+            .ThenInclude(q => q.Correctanswers)
+            .ThenInclude(ca => ca.Option)
+            .Include(r => r.ResponseOptions)
+            .ThenInclude(ro => ro.Option)
+            .Where(r => r.ScoreId == scoreId)
+            .ToListAsync();
+
+        var answerDetails = new List<UserAnswerDetailDto>();
+
+        foreach (var response in responses)
+        {
+            var question = response.Question;
+            var detail = new UserAnswerDetailDto
+            {
+                QuestionId = response.QuestionId,
+                QuestionText = question.QuestionText,
+                QuestionType = question.QuestionType,
+                IsCorrect = response.IsCorrect ?? false,
+                PointsEarned = response.Points ?? 0,
+                AllOptions = question.Options?.Select(o => o.OptionText).ToList() ?? new List<string>() // Все варианты
+            };
+
+            if (question.QuestionType.ToLower() == "text")
+            {
+                detail.UserTextAnswer = response.UserAnswer;
+                detail.CorrectTextAnswer = question.CorrectAnswer; // Правильный текст
+            }
+            else
+            {
+                detail.UserSelectedOptions = response.ResponseOptions
+                    .Select(ro => ro.Option.OptionText)
+                    .ToList();
+
+                detail.CorrectOptions = question.Correctanswers
+                    .Select(ca => ca.Option.OptionText)
+                    .ToList();
+            }
+
+            answerDetails.Add(detail);
+        }
+
+        return new AttemptDetailsDto
+        {
+            ScoreId = score.Id,
+            TotalScore = score.Score1,
+            CreatedAt = score.CreatedAt,
+            Answers = answerDetails
+        };
     }
 }

@@ -2,6 +2,7 @@
 
 public class MyAnswersDto
 {
+    public int Id {get; set;}
     public string Form { get; set; }
     
     public int Score { get; set; }

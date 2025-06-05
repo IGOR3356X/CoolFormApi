@@ -1,4 +1,5 @@
 using Amazon.S3;
+using CoolFormApi.Controllers;
 using CoolFormApi.Interfaces;
 using CoolFormApi.Interfaces.IServices;
 using CoolFormApi.Models;
@@ -26,6 +27,7 @@ builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IQuestionService, QuestionService>();
 builder.Services.AddScoped<IResponseService, ResponseService>();
 builder.Services.AddScoped<IS3Service, S3Service>();
+builder.Services.AddScoped<IGroupService, GroupService>();
 
 builder.Services.AddCors(options =>
 {
@@ -67,7 +69,7 @@ builder.Services.AddSwaggerGen();
 
 builder.Services.AddSwaggerGen(option =>
 {
-    option.SwaggerDoc("v1", new OpenApiInfo { Title = "Demo API", Version = "v1" });
+    option.SwaggerDoc("v1", new OpenApiInfo { Title = "Cool Forms API", Version = "v1" });
     option.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         In = ParameterLocation.Header,
@@ -93,6 +95,16 @@ builder.Services.AddSwaggerGen(option =>
     });
 });
 
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("Ученик", policy =>
+        policy.RequireRole("Ученик"));
+    options.AddPolicy("Учитель", policy =>
+        policy.RequireRole("Учитель"));
+    options.AddPolicy("Админ", policy =>
+        policy.RequireRole("Админ"));
+});
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -104,10 +116,9 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-app.UseCors();
-
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseCors();
 
 app.MapControllers();
 

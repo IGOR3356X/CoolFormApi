@@ -17,7 +17,7 @@ public partial class Question
 
     public int? Points { get; set; }
 
-    public virtual ICollection<CorrectAnswer> Correctanswers { get; set; } = new List<CorrectAnswer>();
+    public virtual ICollection<Correctanswer> Correctanswers { get; set; } = new List<Correctanswer>();
 
     public virtual Form Form { get; set; } = null!;
 

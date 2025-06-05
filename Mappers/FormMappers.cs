@@ -22,7 +22,7 @@ public static class FormMappers
         {
             Name = formDTO.Name,
             Description = formDTO.Description,
-            UserId = formDTO.UserId,
+            IsPublic = formDTO.IsPublic
         };
     }
 
@@ -33,7 +33,7 @@ public static class FormMappers
             Id = form.Id,
             Name = form.Name,
             Description = form.Description,
-            UserId = form.UserId,
+            UserId = form.UserId
         };
     }
 }

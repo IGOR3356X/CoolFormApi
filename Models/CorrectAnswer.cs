@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace CoolFormApi.Models;
 
-public partial class CorrectAnswer
+public partial class Correctanswer
 {
     public int Id { get; set; }
 

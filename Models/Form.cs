@@ -15,6 +15,10 @@ public partial class Form
 
     public int MaxScore { get; set; }
 
+    public bool IsPublic { get; set; }
+
+    public virtual ICollection<FormGroup> FormGroups { get; set; } = new List<FormGroup>();
+
     public virtual ICollection<Question> Questions { get; set; } = new List<Question>();
 
     public virtual ICollection<Response> Responses { get; set; } = new List<Response>();

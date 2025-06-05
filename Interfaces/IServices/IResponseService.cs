@@ -4,8 +4,8 @@ namespace CoolFormApi.Interfaces.IServices;
 
 public interface IResponseService
 {
-    public Task<ScoreResultDto> SubmitAnswersAsync(SubmitAnswersDto submitDto);
-    public Task<List<MyAnswersDto>> GetUserAnswers(int userId);
-    
-    public Task<List<FormAnswersDTO>> GetFormAnswers(int formId);
+    Task<ScoreResultDto> SubmitAnswersAsync(SubmitAnswersDto submitDto);
+    Task<List<MyAnswersDto>> GetUserAnswers(int userId);
+    Task<AttemptDetailsDto> GetAttemptDetailsAsync(int scoreId, int currentUserId);
+    Task<List<FormAnswersDTO>> GetFormAnswers(int formId);
 }

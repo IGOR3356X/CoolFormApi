@@ -17,9 +17,41 @@ public class UserController:ControllerBase
         _userService = userService;
     }
     
+    [HttpGet]
+    [Authorize(Roles = "Админ")]
+    public async Task<IActionResult> GetAllUsers()
+    {
+        return Ok(await _userService.GetUsersAsync());
+    }
+    
+    [Authorize(Roles = "Админ,Учитель,Ученик")]
+    [HttpGet("{userId}")]
+    [ActionName("GetUserById")]
+    public async Task<IActionResult> GetUserById([FromRoute]int userId)
+    {
+        var gg = await _userService.GetUserById(userId);
+        
+        if (gg  == null)
+        {
+            return NotFound(new { message = "User not found" });
+        }
+
+        return Ok(gg);
+    }
+    
+    [HttpPost]
+    [Authorize(Roles = "Админ")]
+    public async Task<IActionResult> CreateUser([FromForm]CreateUserDTO createUserDto)
+    {
+        var response = await _userService.RegisterUser(createUserDto);
+        if(response == null)
+            return BadRequest(new { message = "Пользователь с таким ником уже существует"});
+        return CreatedAtAction(nameof(GetUserById),new {userId = response.Id}, response);
+    }
+    
     [HttpPut("{userId}")]
-    [Authorize]
-    public async Task<IActionResult> UpdateUser (int userId, [FromForm] UpdateUserDTO updateUserDto)
+    [Authorize(Roles = "Админ")]
+    public async Task<IActionResult> UpdateUser(int userId, [FromForm] UpdateUserDTO updateUserDto)
     {
         var response = await _userService.UpdateUser(updateUserDto, userId);
         switch (response)
@@ -33,19 +65,5 @@ public class UserController:ControllerBase
             default:
                 return BadRequest(new { message = "Something went wrong" });
         }
-    }
-
-    [HttpGet("{userId}")]
-    [Authorize]
-    public async Task<IActionResult> GetUser(int userId)
-    {
-        var gg = await _userService.getUserById(userId);
-        
-        if (gg  == null)
-        {
-            return NotFound(new { message = "User not found" });
-        }
-
-        return Ok(gg);
     }
 }

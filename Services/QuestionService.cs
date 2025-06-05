@@ -8,18 +8,18 @@ using Microsoft.EntityFrameworkCore;
 
 namespace CoolFormApi.Services;
 
-public class QuestionService: IQuestionService
+public class QuestionService : IQuestionService
 {
     private readonly IGenericRepository<Question> _repositoryQestions;
     private readonly IGenericRepository<Option> _repositoryOptions;
-    private readonly IGenericRepository<CorrectAnswer> _repositoryCorAnswer;
+    private readonly IGenericRepository<Correctanswer> _repositoryCorAnswer;
     private readonly IGenericRepository<Response> _repositoryResponse;
     private readonly IGenericRepository<Form> _repositoryForm;
 
-    public QuestionService(IGenericRepository<Question> repositoryQestions, 
-        IGenericRepository<Option> repositoryOptions, 
-        IGenericRepository<CorrectAnswer> repositoryCorAnswer, 
-        IGenericRepository<Response> repositoryResponse, 
+    public QuestionService(IGenericRepository<Question> repositoryQestions,
+        IGenericRepository<Option> repositoryOptions,
+        IGenericRepository<Correctanswer> repositoryCorAnswer,
+        IGenericRepository<Response> repositoryResponse,
         IGenericRepository<Form> repositoryForm)
     {
         _repositoryQestions = repositoryQestions;
@@ -28,12 +28,10 @@ public class QuestionService: IQuestionService
         _repositoryResponse = repositoryResponse;
         _repositoryForm = repositoryForm;
     }
-    
+
     public async Task<GetFormDescription> getAllQuestions(int formId)
     {
         var surveyData = await _repositoryQestions.GetQueryable()
-            .Include(x => x.Options)
-            .Include(x => x.Form)
             .Where(x => x.FormId == formId)
             .Select(q => new GetAllQuestionsFromForm
             {
@@ -45,43 +43,42 @@ public class QuestionService: IQuestionService
                 {
                     Id = o.Id,
                     OptionText = o.OptionText
-                }).ToList()
+                }).ToList(),
+            
+                // Для текстовых вопросов
+                CorrectTextAnswer = (q.QuestionType == "text") 
+                    ? q.CorrectAnswer 
+                    : null,
+                
+                // Для вопросов с выбором
+                CorrectOptions = (q.QuestionType == "radio" || q.QuestionType == "checkbox")
+                    ? q.Correctanswers.Select(ca => new QuestionOptions 
+                    {
+                        Id = ca.Option.Id,
+                        OptionText = ca.Option.OptionText
+                    }).ToList()
+                    : null
             })
             .ToListAsync();
 
-        // Группируем вопросы по форме
+        // Остальной код без изменений
         var formDescription = await _repositoryForm.GetQueryable()
             .Where(x => x.Id == formId)
             .FirstOrDefaultAsync();
 
-        return new GetFormDescription { FormName = formDescription.Name
-            , FormDescription = formDescription.Description, 
-            Questions = surveyData };
+        return new GetFormDescription
+        {
+            FormName = formDescription.Name,
+            FormDescription = formDescription.Description,
+            Questions = surveyData
+        };
     }
 
-    // public async Task AddQuestion(CreateNewQuestionDTO newQuestion)
-    // {
-    //     var gg = await _repositoryQestions.CreateAsync(newQuestion.FromCreateNewQuestionDtoToQuestion());
-    //
-    //     if (newQuestion.Options != null && newQuestion.Options.Count > 0)
-    //     {
-    //         foreach (var optionText in newQuestion.Options)
-    //         {
-    //             var option = new Option
-    //             {
-    //                 QuestionId = gg.Id, // Устанавливаем ID вопроса
-    //                 OptionText = optionText
-    //             };
-    //             _repositoryOptions.CreateAsync(option);
-    //         }
-    //     }
-    //       
-    // }
     public async Task<CreatedQuestion> AddQuestion(CreateNewQuestionDTO newQuestion)
     {
         var question = newQuestion.FromCreateNewQuestionDtoToQuestion();
-        question.CorrectAnswer = newQuestion.QuestionType == "text" 
-            ? newQuestion.CorrectAnswer 
+        question.CorrectAnswer = newQuestion.QuestionType == "text"
+            ? newQuestion.CorrectAnswer
             : null;
 
         var createdQuestion = await _repositoryQestions.CreateAsync(question);
@@ -97,11 +94,12 @@ public class QuestionService: IQuestionService
                 };
                 await _repositoryOptions.CreateAsync(option);
             }
-            
+
             if (!string.IsNullOrEmpty(newQuestion.CorrectAnswer))
             {
-                var options = (_repositoryOptions.GetQueryable().Where(x=> x.QuestionId == createdQuestion.Id)).ToList();
-                
+                var options =
+                    (_repositoryOptions.GetQueryable().Where(x => x.QuestionId == createdQuestion.Id)).ToList();
+
                 var correctAnswers = newQuestion.QuestionType switch
                 {
                     "radio" => new[] { newQuestion.CorrectAnswer.Trim() },
@@ -110,10 +108,10 @@ public class QuestionService: IQuestionService
                         .Select(a => a.Trim()),
                     _ => Enumerable.Empty<string>()
                 };
-                
+
                 foreach (var option in options.Where(o => correctAnswers.Contains(o.OptionText)))
                 {
-                    await _repositoryCorAnswer.CreateAsync(new CorrectAnswer()
+                    await _repositoryCorAnswer.CreateAsync(new Correctanswer()
                     {
                         Questionid = createdQuestion.Id,
                         Optionid = option.Id
@@ -121,22 +119,23 @@ public class QuestionService: IQuestionService
                 }
             }
         }
+
         return new CreatedQuestion()
         {
             Id = createdQuestion.Id
         };
     }
-    
+
     public async Task UpdateQuestion(UpdateQuestionDTO updatedQuestion, int questionId)
     {
         var existingQuestion = await _repositoryQestions.GetByIdAsync(questionId);
-        
+
         // Обновление основного вопроса
         existingQuestion.Points = updatedQuestion.Points;
         existingQuestion.QuestionText = updatedQuestion.QuestionText;
         existingQuestion.QuestionType = updatedQuestion.QuestionType;
-        existingQuestion.CorrectAnswer = updatedQuestion.QuestionType == "text" 
-            ? updatedQuestion.CorrectAnswer 
+        existingQuestion.CorrectAnswer = updatedQuestion.QuestionType == "text"
+            ? updatedQuestion.CorrectAnswer
             : null;
 
         await _repositoryQestions.UpdateAsync(existingQuestion);
@@ -184,7 +183,7 @@ public class QuestionService: IQuestionService
 
                 var correctAnswerEntities = options
                     .Where(o => correctAnswers.Contains(o.OptionText))
-                    .Select(o => new CorrectAnswer
+                    .Select(o => new Correctanswer
                     {
                         Questionid = existingQuestion.Id,
                         Optionid = o.Id
@@ -194,46 +193,20 @@ public class QuestionService: IQuestionService
             }
         }
     }
-    
+
     public async Task DeleteQuestion(int questionId)
     {
-            // Получаем вопрос
-            var question = await _repositoryQestions.GetByIdAsync(questionId);
-            if (question == null)
-            {
-                throw new KeyNotFoundException("Question not found");
-            }
+        // Получаем вопрос
+        var question = await _repositoryQestions.GetByIdAsync(questionId);
+        if (question == null)
+        {
+            throw new KeyNotFoundException("Question not found");
+        }
 
-            // Удаляем связанные правильные ответы
-            var correctAnswers = _repositoryCorAnswer.GetQueryable()
-                .Where(c => c.Questionid == questionId)
-                .ToList();
-            if (correctAnswers.Any())
-            {
-                await _repositoryCorAnswer.DeleteRangeAsync(correctAnswers);
-            }
-
-            // Удаляем связанные варианты ответов
-            var options = _repositoryOptions.GetQueryable()
-                .Where(o => o.QuestionId == questionId)
-                .ToList();
-            if (options.Any())
-            {
-                await _repositoryOptions.DeleteRangeAsync(options);
-            }
-
-            // Удаляем связанные ответы пользователей (responses)
-            var responses = _repositoryResponse.GetQueryable()
-                .Where(r => r.QuestionId == questionId)
-                .ToList();
-            if (responses.Any())
-            {
-                _repositoryResponse.DeleteRangeAsync(responses);
-            }
-            // Удаляем сам вопрос
-            await _repositoryQestions.DeleteAsync(questionId);
+        // Удаляем сам вопрос
+        await _repositoryQestions.DeleteAsync(questionId);
     }
-    
+
     public async Task UpdateFormMaxScore(int formId)
     {
         var total = await _repositoryQestions.GetQueryable()

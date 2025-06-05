@@ -19,8 +19,35 @@ public static class UserMappers
     {
         return new GetUserDTO()
         {
+            Id = user.Id,
             Login = user.Login,
-            Photo = user.Photo
+            Password = user.Password,
+            Photo = user.Photo,
+            RoleId = user.RoleId,
+        };
+    }
+    
+
+    public static User fromCreateUserDtoToUser(this CreateUserDTO createUserDto)
+    {
+        return new User()
+        {
+            Login = createUserDto.Login,
+            Password = createUserDto.Password,
+            RoleId = createUserDto.RoleId,
+            GroupId = createUserDto.GroupId,
+        };
+    }
+    
+    public static CreatedUserDTO fromUserToCreatedUserDto(this User user)
+    {
+        return new CreatedUserDTO()
+        {
+            Id = user.Id,
+            Login = user.Login,
+            Password = user.Password,
+            RoleId = user.RoleId,
+            GroupId = user.GroupId
         };
     }
 }

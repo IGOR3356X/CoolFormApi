@@ -18,29 +18,6 @@ public class AuthorizationController : ControllerBase
         _userService = userService;
     }
     
-    [HttpPost("api/register")]
-    public async Task<IActionResult> Registration([FromBody]AuthDTO authDto)
-    {
-        try
-        {
-            var createdUser = await _userService.RegisterUser(authDto);
-            if (createdUser == null)
-            {
-                return BadRequest(new { message = "This username is already taken." });
-            }
-            return Ok(
-                new ResponseAuthDTO()
-                {
-                    Token = _tokenService.CreateToken(createdUser)
-                }
-            );
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, ex);
-        }
-    }
-
     [HttpPost("api/login")]
     public async Task<IActionResult> Login(AuthDTO authDto)
     {

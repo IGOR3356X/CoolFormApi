@@ -19,7 +19,7 @@ public class QuestionController:ControllerBase
     }
     
     [HttpGet]
-    [Authorize]
+    [Authorize(Roles = "Ученик,Админ,Учитель")]
     [Route("{formId}")]
     public async Task<IActionResult> GetQuestions(int formId)
     {
@@ -28,7 +28,7 @@ public class QuestionController:ControllerBase
     }
 
     [HttpPost]
-    [Authorize]
+    [Authorize(Roles = "Админ,Учитель")]
     public async Task<IActionResult> AddQuestion([FromBody] CreateNewQuestionDTO newQuestion)
     {
          var gg = await _questionService.AddQuestion(newQuestion);
@@ -37,7 +37,7 @@ public class QuestionController:ControllerBase
     }
 
     [HttpPut]
-    [Authorize]
+    [Authorize(Roles = "Админ,Учитель")]
     [Route("{questionId}")]
     public async Task<IActionResult> UpdateQuestion([FromBody] UpdateQuestionDTO updateQuestion, int questionId)
     {
@@ -47,7 +47,7 @@ public class QuestionController:ControllerBase
     }
     
     [HttpDelete]
-    [Authorize]
+    [Authorize(Roles = "Админ,Учитель")]
     [Route("{questionId}")]
     public async Task<IActionResult> DeleteQuestion(int questionId,[Required]int formId)
     {

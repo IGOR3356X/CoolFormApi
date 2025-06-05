@@ -1,5 +1,6 @@
 ﻿
 using CoolFormApi.DTO.Form;
+using CoolFormApi.DTO.Questions;
 using CoolFormApi.Interfaces.IServices;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -11,35 +12,59 @@ namespace CoolFormApi.Controllers;
 public class FormController: ControllerBase
 {
     private readonly IFormService _formService;
-
+    
     public FormController(IFormService formService)
     {
         _formService = formService;
     }
     
-    [HttpGet]
-    [Authorize]
-    [Route ("{userId}")]
-    public async Task<IActionResult> GetForm(int userId)
+    [HttpGet("MyFormsForTeachers")]
+    [Authorize(Roles = "Админ,Учитель")]
+    public async Task<IActionResult> GetMyFormsForTeachers()
     {
-        
-        var gg = await _formService.GetUserForms(userId);
+        var userId = int.Parse(User.Claims.FirstOrDefault(c => c.Type == "Id").Value);
+        var gg = await _formService.GetTeacherFormsForTeachers(userId);
+        return Ok(gg);
+    }
+    
+    [HttpGet("MyFormsForGroups")]
+    [Authorize(Roles = "Админ,Учитель")]
+    public async Task<IActionResult> GetMyFormsForGroups([FromQuery] List<int>? groupIds)
+    {
+        var userId = int.Parse(User.Claims.FirstOrDefault(c => c.Type == "Id").Value);
+        var forms = await _formService.GetTeacherFormsForStudents(userId, groupIds);
+        return Ok(forms);
+    }
+    
+    [HttpGet("StudentFormsForHisGroup")]
+    [Authorize(Roles = "Ученик")]
+    public async Task<IActionResult> GetUserFormsForGroups()
+    {
+        var userId = int.Parse(User.Claims.FirstOrDefault(c => c.Type == "Id").Value);
+        var gg = await _formService.GetStudentFormsForHisGroup(userId);
         return Ok(gg);
     }
 
     [HttpPost]
-    [Authorize]
-    public async Task<IActionResult> CreateForm(CreateFormDTO createFormDto)
+    [Authorize(Roles = "Админ,Учитель")]
+    public async Task<IActionResult> CreateForm([FromBody] CreateFormDTO createFormDto)
     {
-        return Ok(await _formService.CreateForm(createFormDto));
+        if(!ModelState.IsValid)
+            return BadRequest(ModelState);
+        var userId = int.Parse(User.Claims.FirstOrDefault(c => c.Type == "Id").Value);
+        var gg = await _formService.CreateForm(createFormDto,userId);
+        return Ok(gg);
     }
 
     [HttpPut]
-    [Authorize]
+    [Authorize(Roles = "Админ,Учитель")]
     [Route ("{formId}")]
     public async Task<IActionResult> UpdateForm([FromRoute]int formId, [FromBody] UpdateFormDTO updateFormDto)
     {
-        var updated = await _formService.UpdateForm(formId, updateFormDto);
+        if(!ModelState.IsValid)
+            return BadRequest(ModelState);  
+        var userId = int.Parse(User.Claims.FirstOrDefault(c => c.Type == "Id").Value);
+        var updated = await _formService.UpdateForm(formId,updateFormDto,userId);
         if (!updated)
         {
             return NotFound();
@@ -48,7 +73,7 @@ public class FormController: ControllerBase
     }
 
     [HttpDelete]
-    [Authorize]
+    [Authorize(Roles = "Админ,Учитель")]
     [Route("{formId}")]
     public async Task<IActionResult> DeleteForm([FromRoute]int formId)
     {
