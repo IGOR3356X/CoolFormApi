@@ -31,46 +31,63 @@ public class QuestionService : IQuestionService
 
     public async Task<GetFormDescription> getAllQuestions(int formId)
     {
-        var surveyData = await _repositoryQestions.GetQueryable()
-            .Where(x => x.FormId == formId)
+        
+        var formWithGroups = await _repositoryForm.GetQueryable()
+            .Include(f => f.FormGroups)
+            .ThenInclude(fg => fg.Group)
+            .Include(f => f.Questions)
+            .ThenInclude(q => q.Options)
+            .Include(f => f.Questions)
+            .ThenInclude(q => q.Correctanswers)
+            .ThenInclude(ca => ca.Option)
+            .FirstOrDefaultAsync(f => f.Id == formId);
+
+        if (formWithGroups == null)
+            return null;
+        
+        var groupsDto = formWithGroups.FormGroups?
+            .Select(fg => new GetGroups
+            {
+                Id = fg.Group.Id,
+                GruopName = fg.Group.Name
+            })
+            .ToList() ?? new List<GetGroups>();
+
+        // Преобразуем вопросы в DTO
+        var questionsDto = formWithGroups.Questions?
             .Select(q => new GetAllQuestionsFromForm
             {
                 Id = q.Id,
                 QuestionText = q.QuestionText,
                 QuestionType = q.QuestionType,
-                Points = q.Points.Value,
-                QuestionOptions = q.Options.Select(o => new QuestionOptions
-                {
-                    Id = o.Id,
-                    OptionText = o.OptionText
-                }).ToList(),
-            
-                // Для текстовых вопросов
-                CorrectTextAnswer = (q.QuestionType == "text") 
-                    ? q.CorrectAnswer 
-                    : null,
-                
-                // Для вопросов с выбором
-                CorrectOptions = (q.QuestionType == "radio" || q.QuestionType == "checkbox")
-                    ? q.Correctanswers.Select(ca => new QuestionOptions 
+                Points = q.Points ?? 0,
+                QuestionOptions = q.Options?
+                    .Select(o => new QuestionOptions
                     {
-                        Id = ca.Option.Id,
-                        OptionText = ca.Option.OptionText
-                    }).ToList()
+                        Id = o.Id,
+                        OptionText = o.OptionText
+                    })
+                    .ToList() ?? new List<QuestionOptions>(),
+                CorrectTextAnswer = (q.QuestionType == "text") ? q.CorrectAnswer : null,
+                CorrectOptions = (q.QuestionType == "radio" || q.QuestionType == "checkbox")
+                    ? q.Correctanswers?
+                        .Select(ca => new QuestionOptions
+                        {
+                            Id = ca.Option.Id,
+                            OptionText = ca.Option.OptionText
+                        })
+                        .ToList()
                     : null
             })
-            .ToListAsync();
-
-        // Остальной код без изменений
-        var formDescription = await _repositoryForm.GetQueryable()
-            .Where(x => x.Id == formId)
-            .FirstOrDefaultAsync();
+            .ToList() ?? new List<GetAllQuestionsFromForm>();
 
         return new GetFormDescription
         {
-            FormName = formDescription.Name,
-            FormDescription = formDescription.Description,
-            Questions = surveyData
+            FormName = formWithGroups.Name,
+            FormDescription = formWithGroups.Description,
+            IsPublic = formWithGroups.IsPublic,
+            Groups = groupsDto,
+            Questions = questionsDto
         };
     }
 

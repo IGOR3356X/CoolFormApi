@@ -17,6 +17,8 @@ public partial class User
 
     public int GroupId { get; set; }
 
+    public string Fullname { get; set; } = null!;
+
     public virtual ICollection<Form> Forms { get; set; } = new List<Form>();
 
     public virtual Group Group { get; set; } = null!;

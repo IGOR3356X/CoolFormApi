@@ -10,4 +10,5 @@ public class UpdateUserDTO
     public IFormFile? File { get; set; }
     public int? RoleId { get; set; }
     public int? GroupId { get; set; } 
+    public string? FullName { get; set; }
 }

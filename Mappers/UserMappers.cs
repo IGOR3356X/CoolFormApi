@@ -24,6 +24,8 @@ public static class UserMappers
             Password = user.Password,
             Photo = user.Photo,
             RoleId = user.RoleId,
+            Group = user.Group.Name,
+            FullName = user.Fullname
         };
     }
     
@@ -36,6 +38,7 @@ public static class UserMappers
             Password = createUserDto.Password,
             RoleId = createUserDto.RoleId,
             GroupId = createUserDto.GroupId,
+            Fullname = createUserDto.FullName
         };
     }
     
@@ -47,7 +50,8 @@ public static class UserMappers
             Login = user.Login,
             Password = user.Password,
             RoleId = user.RoleId,
-            GroupId = user.GroupId
+            GroupId = user.GroupId,
+            FullName = user.Fullname
         };
     }
 }

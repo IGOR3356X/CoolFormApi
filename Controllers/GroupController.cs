@@ -19,7 +19,7 @@ public class GroupController:ControllerBase
     }
     
     [HttpGet]
-    [Authorize(Roles = "Админ")]
+    [Authorize(Roles = "Админ,Учитель")]
     public async Task<IActionResult> GetGrops()
     {
         var gg = await _groupService.GetGroups();
@@ -27,7 +27,7 @@ public class GroupController:ControllerBase
     }
     
     [HttpGet("{groupId:int}")]
-    [Authorize(Roles = "Админ")]
+    [Authorize(Roles = "Админ,Учитель")]
     public async Task<IActionResult> GetGropById([FromRoute] int groupId)
     {
         var gg = await _groupService.GetGroupById(groupId);

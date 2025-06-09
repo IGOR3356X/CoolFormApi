@@ -6,7 +6,15 @@ public class GetFormDescription
 {
     public string FormName { get; set; }
     public string FormDescription { get; set; }
+    public bool IsPublic { get; set; }
+    public List<GetGroups> Groups { get; set; }
     public List<GetAllQuestionsFromForm>? Questions { get; set; }
+}
+
+public class GetGroups
+{
+    public int Id {get; set;}
+    public string GruopName { get; set; }
 }
 public class GetAllQuestionsFromForm
 {

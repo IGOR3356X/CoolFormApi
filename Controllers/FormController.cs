@@ -52,8 +52,8 @@ public class FormController: ControllerBase
         if(!ModelState.IsValid)
             return BadRequest(ModelState);
         var userId = int.Parse(User.Claims.FirstOrDefault(c => c.Type == "Id").Value);
-        var gg = await _formService.CreateForm(createFormDto,userId);
-        return Ok(gg);
+        var createdForm = await _formService.CreateForm(createFormDto,userId);
+        return Ok(createdForm);
     }
 
     [HttpPut]

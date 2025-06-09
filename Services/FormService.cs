@@ -75,14 +75,11 @@ public class FormService : IFormService
     {
         var form = createFormDto.fromCreateFormDTOToForm();
         form.UserId = userId;
-    
-        // Создаем форму
+        
         await _formRepository.CreateAsync(form);
-    
-        // Добавляем связи с группами
+        
         await UpdateFormGroups(form.Id, createFormDto.GroupIds);
-    
-        // Перезагружаем форму с группами для возврата актуальных данных
+        
         var createdForm = await _formRepository.GetQueryable()
             .Include(f => f.FormGroups)
             .FirstOrDefaultAsync(f => f.Id == form.Id);

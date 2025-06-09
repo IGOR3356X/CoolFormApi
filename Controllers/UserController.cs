@@ -19,9 +19,9 @@ public class UserController:ControllerBase
     
     [HttpGet]
     [Authorize(Roles = "Админ")]
-    public async Task<IActionResult> GetAllUsers()
+    public async Task<IActionResult> GetAllUsers([FromQuery] string? fullName)
     {
-        return Ok(await _userService.GetUsersAsync());
+        return Ok(await _userService.GetUsersAsync(fullName));
     }
     
     [Authorize(Roles = "Админ,Учитель,Ученик")]
@@ -50,7 +50,7 @@ public class UserController:ControllerBase
     }
     
     [HttpPut("{userId}")]
-    [Authorize(Roles = "Админ")]
+    [Authorize(Roles = "Админ,Учитель,Ученик")]
     public async Task<IActionResult> UpdateUser(int userId, [FromForm] UpdateUserDTO updateUserDto)
     {
         var response = await _userService.UpdateUser(updateUserDto, userId);
@@ -65,5 +65,15 @@ public class UserController:ControllerBase
             default:
                 return BadRequest(new { message = "Something went wrong" });
         }
+    }
+
+    [HttpDelete("{userId}")]
+    [Authorize(Roles = "Админ")]
+    public async Task<IActionResult> DeleteUser(int userId)
+    {
+        var isDeleted = await _userService.DeleteUser(userId);
+        if(!isDeleted)
+            return BadRequest(new { message = "User not found" });
+        return NoContent();
     }
 }
